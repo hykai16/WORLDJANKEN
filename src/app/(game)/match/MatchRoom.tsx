@@ -420,64 +420,76 @@ export default function MatchRoom({
     )
   }
 
+  const moveEmoji = (m: Move | null) =>
+    m === 'rock' ? '✊' : m === 'scissors' ? '✌️' : m === 'paper' ? '🖐️' : '？'
+
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col px-4 py-6 max-w-md mx-auto">
-      {/* 相手情報 */}
+    <div className="min-h-screen bg-zinc-950 flex flex-col max-w-md mx-auto">
+
+      {/* 左右対戦ヘッダー */}
       {match && (
-        <div className="flex items-center justify-between mb-4 bg-zinc-900 rounded-xl px-4 py-3 border border-zinc-800">
-          <div>
-            <p className="font-bold">{match.opponentName}</p>
-            <p className="text-zinc-400 text-xs">{getRank(match.opponentRating)} · {match.opponentRating}</p>
+        <div className="grid grid-cols-2 border-b border-zinc-800">
+          {/* 左：相手（赤） */}
+          <div className="bg-red-950/30 border-r border-zinc-800 p-4 flex flex-col">
+            <p className="text-red-400 font-black text-sm">{match.opponentName}</p>
+            <p className="text-red-300/60 text-xs">{getRank(match.opponentRating)} · {match.opponentRating}</p>
+            <p className="text-red-400 font-black text-4xl mt-2">{match.opponentWins}</p>
           </div>
-          {match.format !== 'BO1' && (
-            <div className="text-center">
-              <p className="text-lg font-black text-white">
-                {match.opponentWins} — {match.myWins}
-              </p>
-              <p className="text-zinc-500 text-xs">{match.format}</p>
-            </div>
-          )}
+          {/* 右：自分（青） */}
+          <div className="bg-blue-950/30 p-4 flex flex-col items-end">
+            <p className="text-blue-400 font-black text-sm">{userName}</p>
+            <p className="text-blue-300/60 text-xs">{getRank(userRating)} · {userRating}</p>
+            <p className="text-blue-400 font-black text-4xl mt-2">{match.myWins}</p>
+          </div>
+        </div>
+      )}
+
+      {/* フォーマット表示 */}
+      {match && match.format !== 'BO1' && (
+        <div className="text-center py-1 text-zinc-600 text-xs font-semibold border-b border-zinc-800">
+          {match.format}
         </div>
       )}
 
       {/* 相手傾向 */}
-      <div className="mb-4">
+      <div className="px-4 pt-3">
         <OpponentHistory stats={opponentHistory.stats} last10={opponentHistory.last10} />
       </div>
 
-      {/* タイマー + 状態 */}
-      <div className="flex flex-col items-center gap-2 my-4">
+      {/* バトルエリア */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4 px-4">
         {(phase === 'choosing' || phase === 'waiting') && (
-          <Timer seconds={10} onTimeUp={handleTimeUp} running={phase === 'choosing'} />
+          <>
+            <Timer seconds={10} onTimeUp={handleTimeUp} running={phase === 'choosing'} />
+            {phase === 'choosing' && <p className="text-zinc-300 text-sm font-semibold">{tr('match.choose')}</p>}
+            {phase === 'waiting' && <p className="text-zinc-400 text-sm animate-pulse">相手を待っています...</p>}
+          </>
         )}
         {phase === 'revealing' && roundResult && (
-          <div className="text-center">
-            <p className="text-3xl mb-1">
-              {roundResult.result === 'win' ? '🎉' : roundResult.result === 'lose' ? '😞' : '🤝'}
-            </p>
-            <p className={`font-bold text-lg ${
-              roundResult.result === 'win' ? 'text-green-400' :
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-5xl">{moveEmoji(roundResult.opponentMove)}</span>
+                <span className="text-red-400 text-xs font-semibold">OPP</span>
+              </div>
+              <span className="text-zinc-600 font-black text-xl">VS</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-5xl">{moveEmoji(roundResult.myMove)}</span>
+                <span className="text-blue-400 text-xs font-semibold">YOU</span>
+              </div>
+            </div>
+            <p className={`font-black text-xl mt-1 ${
+              roundResult.result === 'win' ? 'text-blue-400' :
               roundResult.result === 'lose' ? 'text-red-400' : 'text-yellow-400'
             }`}>
               {tr(`match.${roundResult.result === 'draw' ? 'draw' : roundResult.result === 'win' ? 'win' : 'lose'}` as Parameters<typeof tr>[0])}
             </p>
-            <p className="text-zinc-400 text-sm">
-              {roundResult.myMove === 'rock' ? '✊' : roundResult.myMove === 'scissors' ? '✌️' : '🖐️'}
-              {' vs '}
-              {roundResult.opponentMove === 'rock' ? '✊' : roundResult.opponentMove === 'scissors' ? '✌️' : '🖐️'}
-            </p>
           </div>
-        )}
-        {phase === 'waiting' && (
-          <p className="text-zinc-400 text-sm animate-pulse">相手を待っています...</p>
-        )}
-        {phase === 'choosing' && (
-          <p className="text-zinc-300 text-sm font-semibold">{tr('match.choose')}</p>
         )}
       </div>
 
       {/* 手選択 */}
-      <div className="grid grid-cols-3 gap-3 mt-auto">
+      <div className="grid grid-cols-3 gap-3 px-4 pb-6">
         {(['rock', 'scissors', 'paper'] as Move[]).map(move => (
           <MoveButton
             key={move}
@@ -487,12 +499,6 @@ export default function MatchRoom({
             onClick={submitMove}
           />
         ))}
-      </div>
-
-      {/* 自分の情報 */}
-      <div className="flex items-center justify-between mt-4 px-1">
-        <p className="font-bold text-sm">{userName}</p>
-        <p className="text-zinc-400 text-xs">{getRank(userRating)} · {userRating}</p>
       </div>
     </div>
   )
