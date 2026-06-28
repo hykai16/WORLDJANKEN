@@ -155,6 +155,21 @@ create policy "logged-in users can enter tournaments" on public.tournament_entri
   exists (select 1 from public.tournaments t where t.id = tournament_id and t.entry_requires_login = true)
 );
 
+-- Matchmaking Queue
+create table public.matchmaking_queue (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.users not null unique,
+  rating integer not null,
+  match_format text not null default 'BO1' check (match_format in ('BO1', 'BO3', 'BO5')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.matchmaking_queue enable row level security;
+create policy "players can manage own queue entry" on public.matchmaking_queue
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+create policy "players can view queue" on public.matchmaking_queue for select using (true);
+
 -- Indexes
 create index on public.users (rating desc);
 create index on public.users (country);
