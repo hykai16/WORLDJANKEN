@@ -1,8 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import MatchRoom from './MatchRoom'
+import CpuMatchRoom from './CpuMatchRoom'
+import type { MatchFormat } from '@/types'
 
-export default async function MatchPage() {
+export default async function MatchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string; format?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -15,6 +21,21 @@ export default async function MatchPage() {
     .single()
 
   if (!profile) redirect('/')
+
+  const params = await searchParams
+  const isCpu = params.mode === 'cpu'
+  const format = (['BO1', 'BO3', 'BO5'].includes(params.format ?? '') ? params.format : 'BO1') as MatchFormat
+
+  if (isCpu) {
+    return (
+      <CpuMatchRoom
+        userId={user.id}
+        userRating={profile.rating}
+        userName={profile.display_name}
+        format={format}
+      />
+    )
+  }
 
   return (
     <MatchRoom

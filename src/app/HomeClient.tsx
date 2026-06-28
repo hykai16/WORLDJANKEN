@@ -98,6 +98,14 @@ export default function HomeClient({ profile, stats, isGuest }: Props) {
           {tr('home.play')}
         </button>
 
+        {/* CPU対戦 */}
+        <button
+          onClick={() => router.push('/match?mode=cpu&format=BO1')}
+          className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-semibold text-zinc-300 border border-zinc-700 transition-colors"
+        >
+          🤖 vs CPU で練習する
+        </button>
+
         {isGuest && (
           <p className="text-zinc-500 text-xs text-center">
             {tr('login.guest.note')}
